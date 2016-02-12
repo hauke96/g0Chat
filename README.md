@@ -8,7 +8,16 @@ Simply execute the `g0Ch@_server` file and the server will start on port 10000. 
 Simply execute the `g0Ch@_client` file, choose on username and enter the server data (IP, port).
 
 ### Parameter
-There'er some parameter like `-b`, that allows you to specify the amount of messages that are stored locally (and that are also displayed) and `-h, --help` that shows the help page.
+There'er some parameter like `-l`, that allows you to specify the amount of messages that are stored locally (and that are also displayed) and `-h, --help` that shows the help page.
+
+All parameters can be used with the syntax [parameter]=[value], e.g. `--username=Hugo` and there's also a short term for those long parameters (it's always the first letter, so `-u=Hugo` would be equivalent to the one before).
+#### All Parameters
+* `-u, --username : `Allows you to specify the username
+* `-i, --ip       : `Allows you to specify the IP of the g0Ch@ server
+* `-p, --port     : `Allows you to specify the port of the g0Ch@ server
+* `-l, --limit    : `Allows you to specify the amount of messages that should be stored locally (default: 50)
+
+The `-l` or `--limit` can also be used without value. In this case you will be asked for a value before you can enter a chatroom.
 
 ### How to chat
 Get a live
