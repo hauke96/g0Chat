@@ -35,6 +35,7 @@ func main() {
 	// listen on port
 	fmt.Println("[", count, "] WAITING FOR LISTENER ...")
 	listener, err := net.Listen("tcp", ":"+strconv.Itoa(10000))
+	defer listener.Close()
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -44,6 +45,7 @@ func main() {
 		// connect
 		fmt.Println("[", count, "] ACCEPTING CONNECTION ...")
 		connection, err := listener.Accept()
+		defer connection.Close()
 		if err != nil {
 			fmt.Println(err)
 			return
