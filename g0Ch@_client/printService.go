@@ -34,6 +34,10 @@ func (p printService) welcomeDialog() {
 		p.settings.port = read("Port (normally 10000): ")
 	}
 
+	if _, b := predefinedArgs['c']; !b {
+		p.settings.channel = read("Channel: ")
+	}
+
 	// ------------------------------
 	// SET DEFAULS
 	// ------------------------------
@@ -72,6 +76,7 @@ func (p printService) showHelp() bool {
 		fmt.Fprintln(writer, "-i, --ip\tThe IP of the g0Ch@ server.")
 		fmt.Fprintln(writer, "-p, --port\tThe port of the g0Ch@ server (usually 10000).")
 		fmt.Fprintln(writer, "-l, --limit\tValue for the size of the message buffer.\n\t(how many messages are stored)")
+		fmt.Fprintln(writer, "-c, --channel\tThe channel you want to talk in.")
 		fmt.Fprintln(writer, "-h, --help\tShows this page.")
 
 		fmt.Fprintln(writer, "\nType  e x i t  as message to leave the chat.")

@@ -24,8 +24,8 @@ func (a *argumentParser) parseArgs(args []string) *settings {
 	a.predefiningArgs = make(map[byte]string, 0) // e.g. port=10000
 
 	// adding known arg with the syntax :argname: to better check if an arg is known or not
-	knownShortArgs := ":u:l:i:p:"
-	knownLongArgs := ":username:limit:port:ip:"
+	knownShortArgs := ":u:l:i:p:c:"
+	knownLongArgs := ":username:limit:port:ip:channel:"
 
 	a.args = a.args[1:] // leave the first argument, which is the applications path
 
@@ -101,6 +101,8 @@ func (a *argumentParser) parsePredefined() *settings {
 			if err == nil {
 				settings.messageLimit = i
 			}
+		case 'c':
+			settings.channel = value
 		}
 	}
 

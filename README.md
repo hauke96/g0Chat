@@ -12,18 +12,19 @@ There'er some parameter like `-l`, that allows you to specify the amount of mess
 
 All parameters can be used with the syntax [parameter]=[value], e.g. `--username=Hugo` and there's also a short term for those long parameters (it's always the first letter, so `-u=Hugo` would be equivalent to the one before).
 #### All Parameters
-* `-u, --username : `Allows you to specify the username
-* `-i, --ip       : `Allows you to specify the IP of the g0Ch@ server
-* `-p, --port     : `Allows you to specify the port of the g0Ch@ server
-* `-l, --limit    : `Allows you to specify the amount of messages that should be stored locally (default: 50)
+* `-u, --username : `The username/nickname.
+* `-i, --ip       : `The IP of the g0Ch@ server.
+* `-p, --port     : `The port of the g0Ch@ server (usually 10000).
+* `-l, --limit    : `Value for the size of the message buffer (how many messages are stored). The default is 50.
+* `-c, --channel  : `The channel you want to talk in.
 
-The `-l` or `--limit` can also be used without value. In this case you will be asked for a value before you can enter a chatroom.
+The `-l` or `--limit` can also be used without value. In this case you will be asked for a value before you can enter a chatroom. If the parameter is not given, the default value of 50 will be used.
 
 ### How to chat
-Get a live
+Seriously?^^ Get a live lol
 
 ### How to leave the chat
-Simply enter `exit` as message and everything will be fine.
+Simply enter `exit` as message and everything will be fine. Cancelling the chat with `Ctrl+C` may have unwanted effects on your terminal (nothing to worry about, so just try it out to see what happens --> s. below).
 
 ## Problems
 ### Can't enter anything after killing the chat client.

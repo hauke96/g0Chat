@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"net"
-	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -12,6 +12,7 @@ type Connection struct {
 	listener   net.Listener
 	connection net.Conn
 	number     int
+	channel    string
 }
 
 var allConnections = make([]Connection, 0)
@@ -26,7 +27,7 @@ func main() {
 	go func() {
 		for true {
 			conn := <-ch
-			fmt.Println("CLOSING CONNECTION", conn.number, "ON PORT", conn.listener.Addr().String()[5:])
+			fmt.Println("[", conn.number, "] CLOSING CONNECTION", conn.number, "ON PORT", conn.listener.Addr().String()[5:])
 		}
 	}()
 
@@ -34,30 +35,47 @@ func main() {
 
 	// listen on port
 	fmt.Println("[", count, "] WAITING FOR LISTENER ...")
-	listener, err := net.Listen("tcp", ":"+strconv.Itoa(10000))
+	listener, err := net.Listen("tcp", ":10000")
 	defer listener.Close()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
+	fmt.Println()
+
 	for true {
 		// connect
-		fmt.Println("[", count, "] ACCEPTING CONNECTION ...")
 		connection, err := listener.Accept()
+		fmt.Println("[", count, "] ACCEPTED CONNECTION ...")
 		defer connection.Close()
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 
-		conn := Connection{listener: listener, connection: connection, number: count}
-		allConnections = append(allConnections, conn)
+		channel, err := bufio.NewReader(connection).ReadString('\n')
+		if err == nil {
 
-		go chatter(conn, ch)
+			fmt.Print("[ ", count, " ] CHANNEL:", channel)
 
-		openConn++
-		count++
+			conn := Connection{
+				listener:   listener,
+				connection: connection,
+				number:     count,
+				channel:    channel[0 : len(channel)-1]}
+
+			allConnections = append(allConnections, conn)
+
+			go chatter(conn, ch)
+
+			openConn++
+			count++
+		} else {
+			fmt.Println("[", count, "] ERROR WHILE ACCEPTING THE CONNECTION:", err)
+		}
+
+		fmt.Println()
 	}
 
 	fmt.Println("STOP SERVER ...")
@@ -69,8 +87,14 @@ func chatter(connection Connection, ch chan Connection) {
 	message, err := bufio.NewReader(connection.connection).ReadString('\n')
 
 	for err == nil {
-		fmt.Print("INCOMING: ", message)
-		notifyAll(message)
+		fmt.Print("[ ", connection.number, " ] INCOMING:   ", message)
+		splittedMessage := strings.Split(message, "\x02")
+		fmt.Print("[ ", connection.number, " ] MESSAGE:    ", splittedMessage[1])
+		fmt.Println("[", connection.number, "] ON CHANNEL ", splittedMessage[0])
+		notifyAll(splittedMessage[1], splittedMessage[0])
+
+		fmt.Println()
+
 		message, err = bufio.NewReader(connection.connection).ReadString('\n')
 	}
 
@@ -78,10 +102,12 @@ func chatter(connection Connection, ch chan Connection) {
 }
 
 // notifyAll sends a message to all connected clients.
-func notifyAll(message string) {
+func notifyAll(message, channel string) {
 	mutex.Lock()
 	for _, c := range allConnections {
-		c.connection.Write([]byte(message))
+		if c.channel == channel {
+			c.connection.Write([]byte(message))
+		}
 	}
 	mutex.Unlock()
 }

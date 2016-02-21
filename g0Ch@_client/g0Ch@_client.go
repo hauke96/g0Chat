@@ -14,11 +14,10 @@ import (
 // ------------------------------
 
 type settings struct {
-	username, ip, port string
-	messageLimit       int
-	args               []string
-	predefiningArgs    map[byte]string
-	messageList        []string
+	username, ip, port, channel string
+	messageLimit                int
+	args, messageList           []string
+	predefiningArgs             map[byte]string
 }
 
 var mutex = sync.Mutex{}
@@ -27,6 +26,13 @@ var clientSettings *settings
 var printer printService
 
 func main() {
+	// ------------------------------
+	// SHOW HELP IF WANTED
+	// ------------------------------
+	if printer.showHelp() { // true --> page was shown
+		return
+	}
+
 	// ------------------------------
 	// CREATE PARSER, SETTINGS AND PRINTER
 	// ------------------------------
@@ -37,13 +43,6 @@ func main() {
 	printer.welcomeDialog()
 
 	// ------------------------------
-	// SHOW HELP IF WANTED
-	// ------------------------------
-	if printer.showHelp() { // true --> page was shown
-		return
-	}
-
-	// ------------------------------
 	// CREATE CONNECTION
 	// ------------------------------
 	connection, err := net.Dial("tcp", clientSettings.ip+":"+clientSettings.port)
@@ -51,6 +50,7 @@ func main() {
 		fmt.Println("ERROR:", err)
 		return
 	}
+	connection.Write([]byte(clientSettings.channel + "\n"))
 	connection.Write([]byte(string("(" + clientSettings.username + " says hi)\n")))
 	defer connection.Close()
 
@@ -81,6 +81,12 @@ func read(display string) string {
 	scanner.Scan()
 	text := scanner.Text()
 	return text //[0 : len(text)-1]
+}
+
+// send a message to the server. This function adds the channel prefix
+// and the \n suffix, so that you can't forget it ;)
+func send(message string, connection net.Conn) {
+	connection.Write([]byte(string(clientSettings.channel + "\x02" + message + "\n")))
 }
 
 // waiter is a function that waits for any messages received by the connection to the server.
@@ -119,11 +125,11 @@ func chat(connection net.Conn) {
 			// ------------------------------
 			if currentInput == "exit" { // when exit --> restore printing of characters
 				exec.Command("stty", "-F", "/dev/tty", "sane", "echo").Run()
-				connection.Write([]byte(string("(" + clientSettings.username + " says bye)\n")))
+				send("("+clientSettings.username+" says bye)", connection)
 				fmt.Println("\n\nHope you had fun, see you soon :)\n\n")
 				return
 			} else {
-				connection.Write([]byte(string(clientSettings.username + ": " + currentInput + "\n")))
+				send(clientSettings.username+": "+currentInput, connection)
 				currentInput = ""
 			}
 
