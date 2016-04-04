@@ -12,6 +12,10 @@ import (
 	"syscall"
 )
 
+// ------------------------------
+//
+// ------------------------------
+
 type Settings struct {
 	port string
 }
@@ -28,39 +32,51 @@ var mutex = &sync.Mutex{}
 var settings = &Settings{port: "10000"}
 
 func main() {
+	// ------------------------------
+	// PREPARE CLEANUP FOR CTRL+C EVENT
+	// ------------------------------
 	prepareCleanup()
 
+	// ------------------------------
+	// PARSE ARGUMENTS
+	// ------------------------------
 	parseConsoleArgs(os.Args, settings)
 
 	fmt.Println("START SERVER ...")
 
 	ch := make(chan (Connection))
 	openConn := 0
+	count := 0
 
+	// ------------------------------
+	// ROUTINE FOR CLOSED CONNECTIONS
+	// ------------------------------
 	go func() {
-		for true {
+		for {
 			conn := <-ch
 			fmt.Println("[ ", conn.number, " ] CLOSING CONNECTION", conn.number, "ON PORT", conn.listener.Addr().String()[5:])
 		}
 	}()
 
-	count := 0
-
-	// listen on port
+	// ------------------------------
+	// START LISTENING
+	// ------------------------------
 	fmt.Print("[ ", count, " ] WAITING FOR LISTENER ...")
 	listener, err := net.Listen("tcp", ":"+settings.port)
+	defer listener.Close()
+
 	if err != nil {
 		fmt.Println("FAIL")
 		fmt.Println(err)
 		return
 	}
-	defer listener.Close()
-
 	fmt.Println("OK")
 	fmt.Println()
 
-	for true {
-		// connect
+	// ------------------------------
+	// ROUTINE FOR NEW CONNECTIONS
+	// ------------------------------
+	for {
 		connection, err := listener.Accept()
 		fmt.Print("[ ", count, " ] ACCEPTED CONNECTION ...")
 		defer connection.Close()
@@ -148,7 +164,7 @@ func cleanup() {
 	for _, c := range allConnections {
 		fmt.Println("  CONN NR. " + strconv.Itoa(c.number) + " ON CHAN " + c.channel)
 		c.connection.Write([]byte("\x04SERVER: Server is shutting down. Good bye :)\n"))
-		//		c.connection.Close()
+		c.connection.Close()
 	}
 	mutex.Unlock()
 	fmt.Println("DONE")

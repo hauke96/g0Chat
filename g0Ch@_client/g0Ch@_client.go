@@ -6,7 +6,9 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"os/signal"
 	"sync"
+	"syscall"
 )
 
 // ------------------------------
@@ -32,6 +34,11 @@ func main() {
 	if printer.showHelp() { // true --> page was shown
 		return
 	}
+
+	// ------------------------------
+	// PREPARE CLEANUP FOR CTRL+C EVENT
+	// ------------------------------
+	prepareCleanup()
 
 	// ------------------------------
 	// CREATE PARSER, SETTINGS AND PRINTER
@@ -100,7 +107,7 @@ func waiter(connection net.Conn) {
 			printer.run = false
 			clientSettings.messageList = append(clientSettings.messageList, message[1:])
 			printer.printMessages()
-			exit()
+			cleanup()
 		} else {
 			clientSettings.messageList = append(clientSettings.messageList, message)
 		}
@@ -133,7 +140,7 @@ func chat(connection net.Conn) {
 			// ------------------------------
 			if currentInput == "exit" { // when exit --> restore printing of characters
 				send("("+clientSettings.username+" says bye)", connection)
-				exit()
+				cleanup()
 			} else {
 				send(clientSettings.username+": "+currentInput, connection)
 				currentInput = ""
@@ -160,7 +167,19 @@ func chat(connection net.Conn) {
 	}
 }
 
-func exit() {
+// prepareCleanup creates a routine that's executed when either a os.Interrupt or a SIGTERM event is fired. This will call the cleanup() function.
+func prepareCleanup() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	signal.Notify(c, syscall.SIGTERM)
+	go func() {
+		<-c
+		cleanup()
+		os.Exit(1)
+	}()
+}
+
+func cleanup() {
 	exec.Command("stty", "-F", "/dev/tty", "sane", "echo").Run()
 	fmt.Println("\n\nHope you had fun, see you soon :)\n\n")
 	os.Exit(1)
