@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/signal"
+	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 )
 
 type Settings struct {
@@ -25,6 +28,8 @@ var mutex = &sync.Mutex{}
 var settings = &Settings{port: "10000"}
 
 func main() {
+	prepareCleanup()
+
 	parseConsoleArgs(os.Args, settings)
 
 	fmt.Println("START SERVER ...")
@@ -35,32 +40,36 @@ func main() {
 	go func() {
 		for true {
 			conn := <-ch
-			fmt.Println("[", conn.number, "] CLOSING CONNECTION", conn.number, "ON PORT", conn.listener.Addr().String()[5:])
+			fmt.Println("[ ", conn.number, " ] CLOSING CONNECTION", conn.number, "ON PORT", conn.listener.Addr().String()[5:])
 		}
 	}()
 
 	count := 0
 
 	// listen on port
-	fmt.Println("[", count, "] WAITING FOR LISTENER ...")
+	fmt.Print("[ ", count, " ] WAITING FOR LISTENER ...")
 	listener, err := net.Listen("tcp", ":"+settings.port)
 	if err != nil {
+		fmt.Println("FAIL")
 		fmt.Println(err)
 		return
 	}
 	defer listener.Close()
 
+	fmt.Println("OK")
 	fmt.Println()
 
 	for true {
 		// connect
 		connection, err := listener.Accept()
-		fmt.Println("[", count, "] ACCEPTED CONNECTION ...")
+		fmt.Print("[ ", count, " ] ACCEPTED CONNECTION ...")
 		defer connection.Close()
 		if err != nil {
+			fmt.Println("FAIL")
 			fmt.Println(err)
 			return
 		}
+		fmt.Println("OK")
 
 		channel, err := bufio.NewReader(connection).ReadString('\n')
 		if err == nil {
@@ -80,13 +89,11 @@ func main() {
 			openConn++
 			count++
 		} else {
-			fmt.Println("[", count, "] ERROR WHILE ACCEPTING THE CONNECTION:", err)
+			fmt.Println("[ ", count, " ] ERROR WHILE ACCEPTING THE CONNECTION:", err)
 		}
 
 		fmt.Println()
 	}
-
-	fmt.Println("STOP SERVER ...")
 }
 
 // chatter is a service function that cares about one connection to a client.
@@ -118,4 +125,31 @@ func notifyAll(message, channel string) {
 		}
 	}
 	mutex.Unlock()
+}
+
+// prepareCleanup creates a routine that's executed when either a os.Interrupt or a SIGTERM event is fired. This will call the cleanup() function.
+func prepareCleanup() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	signal.Notify(c, syscall.SIGTERM)
+	go func() {
+		<-c
+		fmt.Println("\nSTOP SERVER ...")
+		cleanup()
+		fmt.Println("BYE BYE")
+		os.Exit(1)
+	}()
+}
+
+// cleanup closes all connection so that the client knows that the server has been shut down.
+func cleanup() {
+	mutex.Lock()
+	fmt.Println("CLOSE ALL " + strconv.Itoa(len(allConnections)) + " CONNECTIONS...")
+	for _, c := range allConnections {
+		fmt.Println("  CONN NR. " + strconv.Itoa(c.number) + " ON CHAN " + c.channel)
+		c.connection.Write([]byte("\x04SERVER: Server is shutting down. Good bye :)\n"))
+		//		c.connection.Close()
+	}
+	mutex.Unlock()
+	fmt.Println("DONE")
 }

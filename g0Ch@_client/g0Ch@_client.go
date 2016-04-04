@@ -38,7 +38,7 @@ func main() {
 	// ------------------------------
 	clientSettings = parseConsoleArgs(os.Args)
 
-	printer = printService{clientSettings}
+	printer = printService{settings: clientSettings, run: true}
 	printer.welcomeDialog()
 
 	// ------------------------------
@@ -94,9 +94,18 @@ func waiter(connection net.Conn) {
 	message, err := bufio.NewReader(connection).ReadString('\n')
 
 	for err == nil {
+
 		mutex.Lock()
-		clientSettings.messageList = append(clientSettings.messageList, message)
+		if message[0] == '\x04' {
+			printer.run = false
+			clientSettings.messageList = append(clientSettings.messageList, message[1:])
+			printer.printMessages()
+			exit()
+		} else {
+			clientSettings.messageList = append(clientSettings.messageList, message)
+		}
 		mutex.Unlock()
+
 		message, err = bufio.NewReader(connection).ReadString('\n')
 	}
 
@@ -123,10 +132,8 @@ func chat(connection net.Conn) {
 			// ENTER PRESSED
 			// ------------------------------
 			if currentInput == "exit" { // when exit --> restore printing of characters
-				exec.Command("stty", "-F", "/dev/tty", "sane", "echo").Run()
 				send("("+clientSettings.username+" says bye)", connection)
-				fmt.Println("\n\nHope you had fun, see you soon :)\n\n")
-				return
+				exit()
 			} else {
 				send(clientSettings.username+": "+currentInput, connection)
 				currentInput = ""
@@ -151,4 +158,10 @@ func chat(connection net.Conn) {
 			currentInput += string(b)
 		}
 	}
+}
+
+func exit() {
+	exec.Command("stty", "-F", "/dev/tty", "sane", "echo").Run()
+	fmt.Println("\n\nHope you had fun, see you soon :)\n\n")
+	os.Exit(1)
 }
