@@ -13,7 +13,7 @@ import (
 //
 // ------------------------------
 
-type settings struct {
+type Settings struct {
 	username, ip, port, channel string
 	messageLimit                int
 	args, messageList           []string
@@ -22,7 +22,7 @@ type settings struct {
 
 var mutex = sync.Mutex{}
 var currentInput string
-var clientSettings *settings
+var clientSettings *Settings
 var printer printService
 
 func main() {
@@ -36,8 +36,7 @@ func main() {
 	// ------------------------------
 	// CREATE PARSER, SETTINGS AND PRINTER
 	// ------------------------------
-	parser := argumentParser{}
-	clientSettings = parser.parseArgs(os.Args)
+	clientSettings = parseConsoleArgs(os.Args)
 
 	printer = printService{clientSettings}
 	printer.welcomeDialog()

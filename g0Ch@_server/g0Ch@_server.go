@@ -4,9 +4,14 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"os"
 	"strings"
 	"sync"
 )
+
+type Settings struct {
+	port string
+}
 
 type Connection struct {
 	listener   net.Listener
@@ -17,8 +22,11 @@ type Connection struct {
 
 var allConnections = make([]Connection, 0)
 var mutex = &sync.Mutex{}
+var settings = &Settings{port: "10000"}
 
 func main() {
+	parseConsoleArgs(os.Args, settings)
+
 	fmt.Println("START SERVER ...")
 
 	ch := make(chan (Connection))
@@ -35,12 +43,12 @@ func main() {
 
 	// listen on port
 	fmt.Println("[", count, "] WAITING FOR LISTENER ...")
-	listener, err := net.Listen("tcp", ":10000")
-	defer listener.Close()
+	listener, err := net.Listen("tcp", ":"+settings.port)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+	defer listener.Close()
 
 	fmt.Println()
 

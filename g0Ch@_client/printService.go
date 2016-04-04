@@ -10,7 +10,7 @@ import (
 )
 
 type printService struct {
-	settings *settings
+	settings *Settings
 }
 
 // welcomeDialog asks for the username, port, ip and some other values that are
