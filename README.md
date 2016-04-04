@@ -36,5 +36,9 @@ Seriously?^^ Get a live lol
 Simply enter `exit` as message and everything will be fine. Cancelling the chat with `Ctrl+C` may have unwanted effects on your terminal (nothing to worry about, so just try it out to see what happens --> s. below).
 
 ## Problems
-### Can't enter anything after killing the chat client.
-Just close and re-open the terminal. g0Ch@ reads the input of the user but also updates the view. This cant be done normally so the `stty` settings must be changed a bit which causes "invisible input". When you know a bette way of doing this, please create a ticket or a pull-request :)
+### Terminal hacking
+It's not a bug or something, it's just not fancy. At the moment I have to kind of hack the terminal with `stty` to be able to grab typed characters before the user presses enter.
+
+Let's say a user writes a sentence, while doing so, a message comes in, the screen becomes cleared and the message is printed onto the screen. Normally the users input is gone now. It's buffered (so available for the internal system) but not visible anymore.
+
+To prevent this, I have to disable buffering, grab characters directly when they are typed and display them manually. And this is ugly I think. If there's a better method out there, please let me know or commit a pull request.
