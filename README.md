@@ -1,6 +1,11 @@
 # g0Ch@
 g0Ch@: A simple terminal based chat written in go (unfortunately github does not allow @ in the repo name thats why the repo is called `g0Chat` and not `g0Ch@` :/)
 
+The chat is a linux only application, it'll propably *not* run on Windows and *maybe* on Mac. Same for the server which might also run on Windows and Mac, but there's no guarantee.
+
+## How to build
+Just execute the build script via `sh compile.sh`. Windows and Mac user may do this manually.
+
 ## How to start the server
 Simply execute the `g0Ch@_server` file and the server will start on port 10000 by default (for parameters s. "Server Parameter" below). When it doesn't, check the output of it (so better run the server in a terminal ;) ).
 
