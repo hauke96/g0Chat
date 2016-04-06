@@ -9,7 +9,7 @@ import (
 // normal and predefinings arguments.
 // It also evaluates the predefining ones.
 func parseConsoleArgs(args []string) *Settings {
-	args, predefiningArgs := GeneralParser.ParseArgs(args, ":u:l:i:p:c:", ":username:limit:port:ip:channel:")
+	args, predefiningArgs := GeneralParser.parseArgs(args, ":u:l:i:p:c:", ":username:limit:port:ip:channel:")
 	return parsePredefined(args, predefiningArgs)
 }
 
