@@ -1,7 +1,6 @@
 package GeneralParser
 
 import (
-	"errors"
 	"strconv"
 )
 
@@ -15,42 +14,53 @@ type argument struct {
 	boolValue   *bool
 }
 
+// String defines this argument as an argument that contains a string.
+// After calling 'Parse' on the parser this argument belongs to, the value will be set
 func (a *argument) String() *string {
-	return a.stringValue
+	v := new(string)
+	a.stringValue = v
+	return v
 }
 
+// String defines this argument as an argument that contains an integer.
+// After calling 'Parse' on the parser this argument belongs to, the value will be set
 func (a *argument) Int() *int {
-	return a.intValue
+	v := new(int)
+	a.intValue = v
+	return v
 }
 
+// String defines this argument as an argument that contains a boolen.
+// After calling 'Parse' on the parser this argument belongs to, the value will be set
 func (a *argument) Bool() *bool {
-	return a.boolValue
+	v := new(bool)
+	a.boolValue = v
+	return v
 }
 
+// Help sets/redefines the help-message.
 func (a *argument) Help(text string) *argument {
 	a.helpText = text
 	return a
 }
 
+// Required defines this argument as a required one. Skipping this argument by executing the programm will cause an error and a user notification.
 func (a *argument) Required() *argument {
 	a.required = true
 	return a
 }
 
-func (a *argument) set(value string) error {
-	a.stringValue = &value
-
+func (a *argument) set(value string) {
 	intValue, err := strconv.Atoi(value)
-	if err != nil {
-		return errors.New("\tThe argument " + value + " is not an integer!")
+	if err == nil {
+		*a.intValue = intValue
 	}
-	*a.intValue = intValue
 
 	boolValue, err := strconv.ParseBool(value)
-	if err != nil {
-		return errors.New("\tThe argument " + value + " is not a boolean!")
+	if err == nil {
+		*a.boolValue = boolValue
+		return
 	}
-	*a.boolValue = boolValue
 
-	return nil
+	*a.stringValue = value
 }

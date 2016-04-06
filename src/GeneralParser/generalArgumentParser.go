@@ -1,7 +1,6 @@
 package GeneralParser
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -15,6 +14,7 @@ type parser struct {
 	knownShortArgs string
 }
 
+// NewParser creates an empty parser with no arguments.
 func NewParser() *parser {
 	p := parser{
 		args:           make(map[string]*argument),
@@ -25,24 +25,33 @@ func NewParser() *parser {
 	return &p
 }
 
-func (p *parser) RegisterArgument(longKey, shortKey, help string) (*argument, error) {
+// RegisterArgument creates a new argument based on the parameters given.
+// Now allowed is an empty shortKey and existing long/shortKeys
+func (p *parser) RegisterArgument(longKey, shortKey, help string) *argument {
 	// the long key is allowed to be empty, the short key not
 	if shortKey == "" {
-		return nil, errors.New("Only the long key can be empty!")
+		return nil
 	}
 	// when the long key and a fitting entry exists, we've a duplicate here
 	if longKey != "" && p.longToShortArg[longKey] != "" {
-		return nil, errors.New("The long key " + longKey + " already exists!")
+		return nil
 	}
 	// when there's a short key entry already, we've a duplicate here
 	if p.args[shortKey] != nil {
-		return nil, errors.New("The short key " + shortKey + " already exists!")
+		return nil
 	}
 
+	stdString := ""
+	stdInt := 0
+	stdBool := false
+
 	a := argument{
-		longKey:  longKey,
-		shortKey: shortKey,
-		helpText: help,
+		longKey:     longKey,
+		shortKey:    shortKey,
+		helpText:    help,
+		stringValue: &stdString,
+		intValue:    &stdInt,
+		boolValue:   &stdBool,
 	}
 
 	p.knownShortArgs += shortKey + ":"
@@ -50,9 +59,10 @@ func (p *parser) RegisterArgument(longKey, shortKey, help string) (*argument, er
 	p.longToShortArg[longKey] = shortKey
 
 	p.args[shortKey] = &a
-	return &a, nil
+	return &a
 }
 
+// Parse goes through the arguments (from 1 to n, so the first one is skiped) and sets the values of the arguments
 func (p *parser) Parse() {
 	p.parseArgs(os.Args[1:])
 }
@@ -62,14 +72,8 @@ func (p *parser) Parse() {
 // It also evaluates the predefining ones.
 func (p *parser) parseArgs(args []string) {
 	// ------------------------------
-	// INIT
+	// CREATE OUTPUT WRITER
 	// ------------------------------
-	//	predefiningArgs := make(map[byte]string, 0) // e.g. --port=10000
-
-	// adding known arg with the syntax :argname: to better check if an arg is known or not
-	//	knownShortArgs := ":p:c:"
-	//	knownLongArgs := ":port:channels:"
-
 	writer := new(tabwriter.Writer)
 	writer.Init(os.Stdout, 0, 4, 2, ' ', 0)
 	defer writer.Flush()
@@ -97,7 +101,7 @@ func (p *parser) parseArgs(args []string) {
 	// ------------------------------
 	// SEPARATE INTO NORMAL AND PREDEFINING
 	// ------------------------------
-	newArgs = make([]string, 0)
+	//	newArgs = make([]string, 0)
 	for _, arg := range args {
 		splittedArg := strings.Split(arg, "=")
 
@@ -112,11 +116,16 @@ func (p *parser) parseArgs(args []string) {
 		if len(splittedArg[0]) == 1 && strings.Contains(p.knownShortArgs, ":"+splittedArg[0]+":") ||
 			len(splittedArg[0]) > 1 && strings.Contains(p.knownLongArgs, ":"+splittedArg[0]+":") { // is it a valid short or long argument?
 
-			if len(splittedArg) >= 2 { // long argument
+			if len(splittedArg[0]) > 1 { // long argument like --foo and not -f
+				splittedArg[0] = p.longToShortArg[splittedArg[0]]
+			}
+
+			if len(splittedArg) >= 2 { // argument with value
 				fmt.Fprintln(writer, "PREDEF:", splittedArg[0], "\t=", splittedArg[1])
-				//				predefiningArgs[splittedArg[0][0]] = splittedArg[1]
-			} else { // short argument
-				newArgs = append(newArgs, string(splittedArg[0][0]))
+				p.args[splittedArg[0]].set(splittedArg[1])
+			} else { // argument without value (=flag)
+				fmt.Fprintln(writer, "PREDEF:", splittedArg[0], "\t=", true)
+				p.args[splittedArg[0]].set("true")
 			}
 		} else { // not valid
 			fmt.Println("ERROR: Unknown argument", splittedArg[0], "but I'll ignore it :/")
