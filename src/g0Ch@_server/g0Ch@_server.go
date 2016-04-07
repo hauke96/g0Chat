@@ -40,7 +40,7 @@ func main() {
 	// ------------------------------
 	// PARSE ARGUMENTS
 	// ------------------------------
-	parseConsoleArgs(os.Args, settings)
+	settings = parseConsoleArgs()
 
 	fmt.Println("START SERVER ...")
 

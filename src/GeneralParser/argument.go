@@ -50,6 +50,12 @@ func (a *argument) Required() *argument {
 	return a
 }
 
+// Default sets a default value to this argument
+func (a *argument) Default(value string) *argument {
+	a.set(value)
+	return a
+}
+
 func (a *argument) set(value string) {
 	intValue, err := strconv.Atoi(value)
 	if err == nil {

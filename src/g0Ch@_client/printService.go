@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"strconv"
 	"text/tabwriter"
 	"time"
 )
@@ -12,49 +11,6 @@ import (
 type printService struct {
 	settings *Settings
 	run      bool
-}
-
-// welcomeDialog asks for the username, port, ip and some other values that are
-// necessary or specified by the console arguments.
-// When an property is already predefined via the console arguments, there'll be
-// no dialog for this.
-func (p printService) welcomeDialog() {
-	// ------------------------------
-	// CHECK FOR UN-PREDEFINED ARGS
-	// ------------------------------
-	predefinedArgs := p.settings.predefiningArgs
-	if _, b := predefinedArgs['u']; !b {
-		p.settings.username = read("Choose username: ")
-	}
-
-	if _, b := predefinedArgs['i']; !b {
-		p.settings.ip = read("IP: ")
-	}
-
-	if _, b := predefinedArgs['p']; !b {
-		p.settings.port = read("Port (normally 10000): ")
-	}
-
-	if _, b := predefinedArgs['c']; !b {
-		p.settings.channel = read("Channel: ")
-	}
-
-	// ------------------------------
-	// SET DEFAULS
-	// ------------------------------
-	p.settings.messageLimit = 50
-
-	// ------------------------------
-	// CHECK NORMAL ARGS
-	// ------------------------------
-	for _, arg := range p.settings.args {
-		switch arg {
-		case "-l":
-			p.settings.messageLimit = p.askForLimit()
-		}
-	}
-
-	p.settings.messageList = make([]string, p.settings.messageLimit)
 }
 
 // showHelp simply shows the help message with all available parameters.
@@ -90,20 +46,6 @@ func (p printService) showHelp() bool {
 	return false
 }
 
-// askForLimit will show a dialog where the user can enter a size limit for the message list.
-func (p printService) askForLimit() int {
-	limitInput := read("Message limit:")
-	limit, err := strconv.Atoi(limitInput)
-	for err != nil {
-		if err != nil {
-			fmt.Println("ERROR: Maybe", limit, "is not a number?")
-		}
-		limitInput = read("Message limit:")
-		limit, err = strconv.Atoi(limitInput)
-	}
-	return limit
-}
-
 // printAll prints the list of saved messages (length is specified by the
 // messageLimit variable) an empty line and the user input.
 func (p printService) printAll() {
@@ -137,6 +79,7 @@ func (p printService) printMessages() {
 	// ------------------------------
 	// PRINT MESSAGES
 	// ------------------------------
+	fmt.Println(len(p.settings.messageList))
 	for _, v := range p.settings.messageList[len(p.settings.messageList)-p.settings.messageLimit:] {
 		fmt.Print(v)
 	}

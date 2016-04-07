@@ -2,37 +2,77 @@ package main
 
 import (
 	"../GeneralParser"
+	"bufio"
+	"fmt"
+	"os"
 	"strconv"
 )
 
 // parseConsoleArgs takes the arguments and parses them into two categories:
 // normal and predefinings arguments.
 // It also evaluates the predefining ones.
-func parseConsoleArgs(args []string) *Settings {
-	args, predefiningArgs := GeneralParser.parseArgs(args, ":u:l:i:p:c:", ":username:limit:port:ip:channel:")
-	return parsePredefined(args, predefiningArgs)
-}
+func parseConsoleArgs() *Settings {
+	p := GeneralParser.NewParser()
 
-func parsePredefined(args []string, predefiningArgs map[byte]string) *Settings {
-	settings := Settings{args: args, predefiningArgs: predefiningArgs}
+	username := p.RegisterArgument("username", "u", "The username/nickname.").String()
+	limit := p.RegisterArgument("limit", "l", "Value for the size of the message buffer.\n\t(how many messages are stored)").Int()
+	port := p.RegisterArgument("port", "p", "The port of the g0Ch@ server (usually 10000)").Default("10000").String()
+	ip := p.RegisterArgument("ip", "i", "The IP of the g0Ch@ server.").String()
+	channel := p.RegisterArgument("channel", "c", "The channel you want to talk in").String()
 
-	for key, value := range predefiningArgs {
-		switch key {
-		case 'u':
-			settings.username = value
-		case 'i':
-			settings.ip = value
-		case 'p':
-			settings.port = value
-		case 'l':
-			i, err := strconv.Atoi(value)
-			if err == nil {
-				settings.messageLimit = i
-			}
-		case 'c':
-			settings.channel = value
+	p.Parse()
+
+	settings := Settings{}
+
+	if *username != "" {
+		settings.username = *username
+	} else {
+		settings.username = read("Chooose username: ")
+	}
+
+	if *limit != 0 {
+		settings.messageLimit = *limit
+	} else {
+		limit := read("Message limit: ")
+		limitInt, err := strconv.Atoi(limit)
+		for err != nil {
+			fmt.Println("ERROR: Maybe", limit, "is not a number?")
+			limit = read("Message limit: ")
+			limitInt, err = strconv.Atoi(limit)
 		}
+		settings.messageLimit = limitInt
+	}
+	settings.messageList = make([]string, settings.messageLimit)
+
+	settings.port = *port
+
+	if *ip != "" {
+		settings.ip = *ip
+	} else {
+		settings.ip = read("IP: ")
+	}
+
+	if *channel != "" {
+		settings.channel = *channel
+	} else {
+		settings.channel = read("Channel: ")
 	}
 
 	return &settings
+}
+
+// read prints the display string onto the console and waits for a user intput.
+// The input will be put into the return value.
+// There'll be no additional/empty line when the display string is empty.
+func read(display string) string {
+	scanner := bufio.NewScanner(os.Stdin)
+	if display != "" {
+		fmt.Print(display)
+		if display[len(display)-1] != ' ' {
+			fmt.Print(" ")
+		}
+	}
+	scanner.Scan()
+	text := scanner.Text()
+	return text
 }

@@ -10,8 +10,8 @@ import (
 type parser struct {
 	args           map[string]*argument
 	longToShortArg map[string]string
-	knownLongArgs  string
-	knownShortArgs string
+	KnownLongArgs  string
+	KnownShortArgs string
 }
 
 // NewParser creates an empty parser with no arguments.
@@ -19,8 +19,8 @@ func NewParser() *parser {
 	p := parser{
 		args:           make(map[string]*argument),
 		longToShortArg: make(map[string]string),
-		knownLongArgs:  ":",
-		knownShortArgs: ":",
+		KnownLongArgs:  ":",
+		KnownShortArgs: ":",
 	}
 	return &p
 }
@@ -54,8 +54,8 @@ func (p *parser) RegisterArgument(longKey, shortKey, help string) *argument {
 		boolValue:   &stdBool,
 	}
 
-	p.knownShortArgs += shortKey + ":"
-	p.knownLongArgs += longKey + ":"
+	p.KnownShortArgs += shortKey + ":"
+	p.KnownLongArgs += longKey + ":"
 	p.longToShortArg[longKey] = shortKey
 
 	p.args[shortKey] = &a
@@ -109,12 +109,12 @@ func (p *parser) parseArgs(args []string) {
 		// This is just to have the normal feeling of arguments in linux, blame me but i like it ;)
 		if splittedArg[0][0:2] == "--" && len(splittedArg[0]) > 3 { // 3 because of -- and at least 2 other characters
 			splittedArg[0] = splittedArg[0][2:]
-		} else if len(splittedArg[0]) == 2 { // - and another character
+		} else if len(splittedArg[0]) == 2 { // - and one nother character
 			splittedArg[0] = splittedArg[0][1:]
 		}
 
-		if len(splittedArg[0]) == 1 && strings.Contains(p.knownShortArgs, ":"+splittedArg[0]+":") ||
-			len(splittedArg[0]) > 1 && strings.Contains(p.knownLongArgs, ":"+splittedArg[0]+":") { // is it a valid short or long argument?
+		if len(splittedArg[0]) == 1 && strings.Contains(p.KnownShortArgs, ":"+splittedArg[0]+":") ||
+			len(splittedArg[0]) > 1 && strings.Contains(p.KnownLongArgs, ":"+splittedArg[0]+":") { // is it a valid short or long argument?
 
 			if len(splittedArg[0]) > 1 { // long argument like --foo and not -f
 				splittedArg[0] = p.longToShortArg[splittedArg[0]]

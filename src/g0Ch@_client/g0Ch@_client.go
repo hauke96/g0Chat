@@ -18,8 +18,7 @@ import (
 type Settings struct {
 	username, ip, port, channel string
 	messageLimit                int
-	args, messageList           []string
-	predefiningArgs             map[byte]string
+	messageList                 []string
 }
 
 var mutex = sync.Mutex{}
@@ -29,24 +28,16 @@ var printer printService
 
 func main() {
 	// ------------------------------
-	// SHOW HELP IF WANTED
+	// CREATE PARSER, SETTINGS AND PRINTER
 	// ------------------------------
-	if printer.showHelp() { // true --> page was shown
-		return
-	}
+	clientSettings = parseConsoleArgs()
 
 	// ------------------------------
 	// PREPARE CLEANUP FOR CTRL+C EVENT
 	// ------------------------------
 	prepareCleanup()
 
-	// ------------------------------
-	// CREATE PARSER, SETTINGS AND PRINTER
-	// ------------------------------
-	clientSettings = parseConsoleArgs(os.Args)
-
 	printer = printService{settings: clientSettings, run: true}
-	printer.welcomeDialog()
 
 	// ------------------------------
 	// CREATE CONNECTION
@@ -71,22 +62,6 @@ func main() {
 	go printer.printAll()
 
 	chat(connection)
-}
-
-// read prints the display string onto the console and waits for a user intput.
-// The input will be put into the return value.
-// There'll be no additional/empty line when the display string is empty.
-func read(display string) string {
-	scanner := bufio.NewScanner(os.Stdin)
-	if display != "" {
-		fmt.Print(display)
-		if display[len(display)-1] != ' ' {
-			fmt.Print(" ")
-		}
-	}
-	scanner.Scan()
-	text := scanner.Text()
-	return text //[0 : len(text)-1]
 }
 
 // send a message to the server. This function adds the channel prefix
