@@ -13,11 +13,12 @@ import (
 // It also evaluates the predefining ones.
 func parseConsoleArgs() *Settings {
 	p := GeneralParser.NewParser()
+	p.Description("Type  e x i t  as message to leave the chat.")
 
-	username := p.RegisterArgument("username", "u", "The username/nickname.").String()
-	limit := p.RegisterArgument("limit", "l", "Value for the size of the message buffer.\n\t(how many messages are stored)").Int()
+	username := p.RegisterArgument("username", "u", "The username/nickname").String()
+	limit := p.RegisterArgument("limit", "l", "Value for the size of the message buffer (how many messages are stored)").Int()
 	port := p.RegisterArgument("port", "p", "The port of the g0Ch@ server (usually 10000)").Default("10000").String()
-	ip := p.RegisterArgument("ip", "i", "The IP of the g0Ch@ server.").String()
+	ip := p.RegisterArgument("ip", "i", "The IP of the g0Ch@ server").String()
 	channel := p.RegisterArgument("channel", "c", "The channel you want to talk in").String()
 
 	p.Parse()

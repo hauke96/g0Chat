@@ -12,6 +12,7 @@ type parser struct {
 	longToShortArg map[string]string
 	KnownLongArgs  string
 	KnownShortArgs string
+	description    string
 }
 
 // NewParser creates an empty parser with no arguments.
@@ -21,8 +22,14 @@ func NewParser() *parser {
 		longToShortArg: make(map[string]string),
 		KnownLongArgs:  ":",
 		KnownShortArgs: ":",
+		description:    "",
 	}
 	return &p
+}
+
+// Description sets a new description for further information at the help-text.
+func (p *parser) Description(newDescription string) {
+	p.description = newDescription
 }
 
 // RegisterArgument creates a new argument based on the parameters given.
@@ -71,12 +78,23 @@ func (p *parser) Parse() {
 // normal and predefinings arguments.
 // It also evaluates the predefining ones.
 func (p *parser) parseArgs(args []string) {
+	if len(args) == 0 {
+		return
+	}
 	// ------------------------------
 	// CREATE OUTPUT WRITER
 	// ------------------------------
 	writer := new(tabwriter.Writer)
 	writer.Init(os.Stdout, 0, 4, 2, ' ', 0)
 	defer writer.Flush()
+
+	// ------------------------------
+	// CHECK FOR -h/--help
+	// ------------------------------
+	if args[0] == "--help" || args[0] == "-h" {
+		p.showHelp()
+		os.Exit(1)
+	}
 
 	// ------------------------------
 	// SPLIT COMBINED ARGS
@@ -97,38 +115,80 @@ func (p *parser) parseArgs(args []string) {
 	}
 
 	args = newArgs
+	invalidArgExists := false
 
 	// ------------------------------
 	// SEPARATE INTO NORMAL AND PREDEFINING
 	// ------------------------------
-	//	newArgs = make([]string, 0)
 	for _, arg := range args {
 		splittedArg := strings.Split(arg, "=")
+		key := splittedArg[0]
 
 		// notice: only --foo or -f are allowed, -foo and --f are not allwed!
 		// This is just to have the normal feeling of arguments in linux, blame me but i like it ;)
-		if splittedArg[0][0:2] == "--" && len(splittedArg[0]) > 3 { // 3 because of -- and at least 2 other characters
-			splittedArg[0] = splittedArg[0][2:]
-		} else if len(splittedArg[0]) == 2 { // - and one nother character
-			splittedArg[0] = splittedArg[0][1:]
+		if key[0:2] == "--" && len(key) > 3 { // 3 because of -- and at least 2 other characters
+			key = key[2:]
+		} else if len(key) == 2 { // - and one other character
+			key = key[1:]
 		}
 
-		if len(splittedArg[0]) == 1 && strings.Contains(p.KnownShortArgs, ":"+splittedArg[0]+":") ||
-			len(splittedArg[0]) > 1 && strings.Contains(p.KnownLongArgs, ":"+splittedArg[0]+":") { // is it a valid short or long argument?
+		if len(key) == 1 && strings.Contains(p.KnownShortArgs, ":"+key+":") ||
+			len(key) > 1 && strings.Contains(p.KnownLongArgs, ":"+key+":") { // is it a valid short or long argument?
 
-			if len(splittedArg[0]) > 1 { // long argument like --foo and not -f
-				splittedArg[0] = p.longToShortArg[splittedArg[0]]
+			if len(key) > 1 { // long argument like --foo and not -f
+				key = p.longToShortArg[key]
 			}
 
 			if len(splittedArg) >= 2 { // argument with value
-				fmt.Fprintln(writer, "PREDEF:", splittedArg[0], "\t=", splittedArg[1])
-				p.args[splittedArg[0]].set(splittedArg[1])
+				fmt.Fprintln(writer, "PREDEF:", key, "\t=", splittedArg[1])
+				p.args[key].set(splittedArg[1])
 			} else { // argument without value (=flag)
-				fmt.Fprintln(writer, "PREDEF:", splittedArg[0], "\t=", true)
-				p.args[splittedArg[0]].set("true")
+				fmt.Fprintln(writer, "PREDEF:", key, "\t=", true)
+				p.args[key].set("true")
 			}
 		} else { // not valid
-			fmt.Println("ERROR: Unknown argument", splittedArg[0], "but I'll ignore it :/")
+			if len(key) == 1 { // just to have the - in from of the argument (a bit more pretty ;) )
+				key = "-" + key
+			}
+			fmt.Println("ERROR: Unknown argument", key, "!")
+			invalidArgExists = true
 		}
 	}
+	if invalidArgExists {
+		fmt.Println()
+		p.showHelp()
+		os.Exit(1)
+	}
+}
+
+func (p *parser) showHelp() {
+	writer := new(tabwriter.Writer)
+	writer.Init(os.Stdout, 0, 4, 2, ' ', 0)
+	defer writer.Flush()
+
+	fmt.Fprintln(writer, "Usage: <argument>=<value> <flag>")
+	fmt.Fprintln(writer, "")
+	fmt.Fprintln(writer, "Here're all command that are available:\n")
+
+	requiredExists := false
+
+	for _, arg := range p.args {
+		fmt.Fprint(writer, "\t-"+arg.shortKey+", --"+arg.longKey+"\t")
+		if arg.required {
+			fmt.Fprint(writer, "*")
+			requiredExists = true
+		}
+		fmt.Fprintln(writer, "\t"+arg.helpText)
+	}
+
+	fmt.Fprintln(writer, "\t-h, --help\t\tShows this help message")
+	fmt.Fprintln(writer, "")
+	if requiredExists {
+		fmt.Fprintln(writer, "Commands with a * are required and have to be set.")
+		fmt.Fprintln(writer, "")
+	}
+	if p.description != "" {
+		fmt.Fprintln(writer, p.description)
+	}
+	fmt.Fprintln(writer, "")
 }

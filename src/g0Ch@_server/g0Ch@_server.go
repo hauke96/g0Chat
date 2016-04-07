@@ -33,14 +33,14 @@ var settings = &Settings{port: "10000"}
 
 func main() {
 	// ------------------------------
-	// PREPARE CLEANUP FOR CTRL+C EVENT
-	// ------------------------------
-	prepareCleanup()
-
-	// ------------------------------
 	// PARSE ARGUMENTS
 	// ------------------------------
 	settings = parseConsoleArgs()
+
+	// ------------------------------
+	// PREPARE CLEANUP FOR CTRL+C EVENT
+	// ------------------------------
+	prepareCleanup()
 
 	fmt.Println("START SERVER ...")
 
