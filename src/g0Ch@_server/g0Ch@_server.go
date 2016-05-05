@@ -63,13 +63,13 @@ func main() {
 	// ------------------------------
 	fmt.Print("[ ", count, " ] WAITING FOR LISTENER ...")
 	listener, err := net.Listen("tcp", ":"+settings.port)
-	defer listener.Close()
 
 	if err != nil {
 		fmt.Println("FAIL")
 		fmt.Println(err)
 		return
 	}
+	defer listener.Close()
 	fmt.Println("OK")
 	fmt.Println()
 
@@ -78,13 +78,13 @@ func main() {
 	// ------------------------------
 	for {
 		connection, err := listener.Accept()
-		fmt.Print("[ ", count, " ] ACCEPTED CONNECTION ...")
-		defer connection.Close()
 		if err != nil {
 			fmt.Println("FAIL")
 			fmt.Println(err)
 			return
 		}
+		fmt.Print("[ ", count, " ] ACCEPTED CONNECTION ...")
+		defer connection.Close()
 		fmt.Println("OK")
 
 		channel, err := bufio.NewReader(connection).ReadString('\n')
