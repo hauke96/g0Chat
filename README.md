@@ -46,23 +46,26 @@ Seriously?^^ Get a live lol
 Simply enter `exit` as message and everything will be fine. Cancelling the chat with `Ctrl+C` may have unwanted effects on your terminal (nothing to worry about, so just try it out to see what happens --> s. below).
 
 ## Protocol
+Every package has a prefix (which is not `0x04` and not `0x1f`) a main part and a postfix which is allways `0x04`. Between logical parts of each package is a separator (`0x1f`).
+
+This is `version 1.0` of the g0C@ protocol.
 ### Client -> Server
-The client send very simple packaged of data to the server. The package as the following structure:
+The client send very simple packaged of data to the server. The packages have the following structure:
 ```
-<channel><STX><username>: <message><LF>
+0x00<message>0x04               - send normal message
+0x01<username>0x1f<channel>0x04 - sign in
+0x02<username>0x04              - sign out
 ```
-When a user exits the chat, a good-bye-message is send:
-```
-<channel><STX>(<username> says bye)<LF>
-```
-The `<STX>` char is `\x02` on Golang or `0x02` in hexadecima notatio. The newline notation `<LF>` is `\n` in Golang and that means it's a `U+000A` Unicode char (so `LF` and not any of the `CRLF` shit or something).
 
 ### Server -> Client
-The server receives a message and sends it back to all users in the given channel except the sender of the message. Therefore the message is split by the `STX` char. The channel is the first part and the message the second one. After that the server sends only the pure message to all clients:
+The server receives a message and sends it back to all users in the given channel as well as to the sender of the message. There're different packages for different purposes:
 ```
-<message><LF>
+0x00<username>0x1f<message>0x04 - normal message
+0x01<username>0x04              - sign in
+0x02<username>0x04              - sign out
+0x03<message>0x04               - server shut down
 ```
-
+The `0x04` char is not used as prefix due to possible problems in reading and parsing the package.
 ## Problems
 ### Terminal hacking
 It's not a bug or something, it's just not fancy. At the moment I have to kind of hack the terminal with `stty` to be able to grab typed characters before the user presses enter.

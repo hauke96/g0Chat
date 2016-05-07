@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 )
@@ -32,11 +33,6 @@ func main() {
 	// ------------------------------
 	clientSettings = parseConsoleArgs()
 
-	// ------------------------------
-	// PREPARE CLEANUP FOR CTRL+C EVENT
-	// ------------------------------
-	prepareCleanup()
-
 	printer = printService{settings: clientSettings, run: true}
 
 	// ------------------------------
@@ -47,9 +43,14 @@ func main() {
 		fmt.Println("ERROR:", err)
 		return
 	}
-	connection.Write([]byte(clientSettings.channel + "\n"))
-	connection.Write([]byte(string("(" + clientSettings.username + " says hi)\n")))
+	// sign in
+	connection.Write([]byte(string("\x01" + clientSettings.username + "\x1f" + clientSettings.channel + "\x04")))
 	defer connection.Close()
+
+	// ------------------------------
+	// PREPARE CLEANUP FOR CTRL+C EVENT
+	// ------------------------------
+	prepareCleanup(connection)
 
 	// ------------------------------
 	// START WAITER FOR INPUT
@@ -67,37 +68,51 @@ func main() {
 // send a message to the server. This function adds the channel prefix
 // and the \n suffix, so that you can't forget it ;)
 func send(message string, connection net.Conn) {
-	connection.Write([]byte(string(clientSettings.channel + "\x02" + message + "\n")))
+	if message[len(message)-1:] != "\x04" {
+		message += "\x04"
+	}
+	//	fmt.Println("\n")
+	//	fmt.Println(message)
+	//	fmt.Println([]byte(message))
+	//	cleanup()
+	connection.Write([]byte(message))
 }
 
 // waiter is a function that waits for any messages received by the connection to the server.
 // When a message comes in, the screen will be re-rendered.
 func waiter(connection net.Conn) {
-	message, err := bufio.NewReader(connection).ReadString('\n')
+	rawMessage, err := bufio.NewReader(connection).ReadString('\x04')
 
+loop:
 	for err == nil {
 
 		mutex.Lock()
-		if message[0] == '\x04' {
+		message := rawMessage[1 : len(rawMessage)-1]
+		switch rawMessage[0] {
+		case '\x00':
 			printer.run = false
-			clientSettings.messageList = append(clientSettings.messageList, message[1:])
-			printer.printMessages()
-			cleanup()
-		} else {
+			message = strings.Replace(message, "\x1f", ": ", 2)
 			clientSettings.messageList = append(clientSettings.messageList, message)
+			printer.printMessages()
+		case '\x01':
+			clientSettings.messageList = append(clientSettings.messageList, "[ "+message+" says hi :) ]")
+		case '\x02':
+			clientSettings.messageList = append(clientSettings.messageList, "[ "+message+" says bye :( ]")
+		case '\x03':
+			clientSettings.messageList = append(clientSettings.messageList, "[ SERVER: "+message+" ]")
+			break loop
 		}
 		mutex.Unlock()
 
-		message, err = bufio.NewReader(connection).ReadString('\n')
+		rawMessage, err = bufio.NewReader(connection).ReadString('\x04')
 	}
 
-	fmt.Print("\n\n")
-	if err.Error() == "EOF" {
+	printer.printMessages()
+	printer.run = false
+	if err != nil {
 		fmt.Println("ERROR: Connection to server lost.")
-	} else {
-		fmt.Println(err.Error())
 	}
-	cleanup()
+	cleanup(connection)
 }
 
 // chat waits for user input and sends the given string to the server.
@@ -120,10 +135,9 @@ func chat(connection net.Conn) {
 			// ENTER PRESSED
 			// ------------------------------
 			if currentInput == "exit" { // when exit --> restore printing of characters
-				send("("+clientSettings.username+" says bye)", connection)
-				cleanup()
+				cleanup(connection)
 			} else {
-				send(clientSettings.username+": "+currentInput, connection)
+				send("\x00"+currentInput+"\x04", connection)
 				currentInput = ""
 			}
 
@@ -149,18 +163,19 @@ func chat(connection net.Conn) {
 }
 
 // prepareCleanup creates a routine that's executed when either a os.Interrupt or a SIGTERM event is fired. This will call the cleanup() function.
-func prepareCleanup() {
+func prepareCleanup(connection net.Conn) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	signal.Notify(c, syscall.SIGTERM)
+	signal.Notify(c, syscall.SIGKILL)
 	go func() {
 		<-c
-		cleanup()
-		os.Exit(1)
+		cleanup(connection)
 	}()
 }
 
-func cleanup() {
+func cleanup(connection net.Conn) {
+	send("\x02"+clientSettings.username+"\x04", connection)
 	exec.Command("stty", "-F", "/dev/tty", "sane", "echo").Run()
 	fmt.Println("\n\nHope you had fun, see you soon :)\n\n")
 	os.Exit(1)

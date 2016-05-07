@@ -46,6 +46,6 @@ func (p printService) printMessages() {
 	// PRINT MESSAGES
 	// ------------------------------
 	for _, v := range p.settings.messageList[len(p.settings.messageList)-p.settings.messageLimit:] {
-		fmt.Print(v)
+		fmt.Println(v)
 	}
 }

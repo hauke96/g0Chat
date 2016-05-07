@@ -25,6 +25,7 @@ type Connection struct {
 	connection net.Conn
 	number     int
 	channel    string
+	username   string
 }
 
 var allConnections = make([]Connection, 0)
@@ -55,6 +56,14 @@ func main() {
 		for {
 			conn := <-ch
 			fmt.Print("[ ", conn.number, " ] CLOSING CONNECTION ", conn.number, " ON PORT ", conn.listener.Addr().String()[5:], "\n")
+			notifyAll("\x02"+conn.username+"\x04", conn.channel)
+			// remove connection from slice:
+			for i := range allConnections {
+				if allConnections[i] == conn {
+					allConnections = allConnections[:i+copy(allConnections[i:], allConnections[i+1:])]
+					break
+				}
+			}
 		}
 	}()
 
@@ -87,23 +96,34 @@ func main() {
 		defer connection.Close()
 		fmt.Println("OK")
 
-		channel, err := bufio.NewReader(connection).ReadString('\n')
+		registration, err := bufio.NewReader(connection).ReadString('\x04')
 		if err == nil {
+			// cut and split into [username, channel]
+			registration = registration[1 : len(registration)-1]
+			data := strings.Split(registration, "\x1f")
 
-			fmt.Print("[ ", count, " ] CHANNEL: ", channel)
+			if len(data) == 2 {
+				username := data[0]
+				channel := data[1]
 
-			conn := Connection{
-				listener:   listener,
-				connection: connection,
-				number:     count,
-				channel:    channel[0 : len(channel)-1]}
+				fmt.Print("[ ", count, " ] CHANNEL: ", channel)
 
-			allConnections = append(allConnections, conn)
+				conn := Connection{
+					listener:   listener,
+					connection: connection,
+					number:     count,
+					channel:    channel[0 : len(channel)-1],
+					username:   username}
 
-			go chatter(conn, ch)
+				allConnections = append(allConnections, conn)
 
-			openConn++
-			count++
+				go chatter(conn, ch)
+
+				openConn++
+				count++
+			} else {
+				fmt.Print("[ ", count, " ] ERROR WHILE ACCEPTING THE CONNECTION: ", err, "\n")
+			}
 		} else {
 			fmt.Print("[ ", count, " ] ERROR WHILE ACCEPTING THE CONNECTION: ", err, "\n")
 		}
@@ -115,22 +135,32 @@ func main() {
 // chatter is a service function that cares about one connection to a client.
 // Whenever an user input comes in, it'll be send to all other clients.
 func chatter(connection Connection, ch chan Connection) {
-	message, err := bufio.NewReader(connection.connection).ReadString('\n')
+	notifyAll("\x01"+connection.username+"\x04", connection.channel)
+	rawMessage, err := bufio.NewReader(connection.connection).ReadString('\x04')
 
+loop:
 	for err == nil {
-		fmt.Print("[ ", connection.number, " ] INCOMING:  ", message)
-		splittedMessage := strings.Split(message, "\x02")
-		if len(splittedMessage) == 2 {
-			fmt.Print("[ ", connection.number, " ] MESSAGE:   ", splittedMessage[1])
-			fmt.Print("[ ", connection.number, " ] ON CHANNEL ", splittedMessage[0], "\n")
-			notifyAll(splittedMessage[1], splittedMessage[0])
-		} else {
-			fmt.Print("[ ", connection.number, " ] ERROR: Splitting the message failed.")
+
+		message := rawMessage[0 : len(rawMessage)-1]
+		fmt.Print("[ ", connection.number, " ] INCOMING:  ", rawMessage, "\n")
+
+		switch message[0] {
+		case '\x00':
+			fmt.Print("[ ", connection.number, " ] MESSAGE:   ", message, "\n")
+			notifyAll("\x00"+connection.username+"\x1f"+message+"\x04", connection.channel)
+		case '\x02':
+			fmt.Print("[ ", connection.number, " ] EXIT:      ", message, "\n")
+			break loop
 		}
 
+		fmt.Print("[ ", connection.number, " ] ON CHANNEL ", connection.channel, "\n")
 		fmt.Println()
 
-		message, err = bufio.NewReader(connection.connection).ReadString('\n')
+		rawMessage, err = bufio.NewReader(connection.connection).ReadString('\x04')
+	}
+
+	if err != nil {
+		fmt.Print("[ ", connection.number, " ] ERROR: Reading failed!"+err.Error()+"\n")
 	}
 
 	ch <- connection
@@ -138,6 +168,10 @@ func chatter(connection Connection, ch chan Connection) {
 
 // notifyAll sends a message to all connected clients.
 func notifyAll(message, channel string) {
+	if message[len(message)-1:] != "\x04" {
+		message += "\x04"
+	}
+
 	mutex.Lock()
 	for _, c := range allConnections {
 		if c.channel == channel {
@@ -167,7 +201,9 @@ func cleanup() {
 	fmt.Println("CLOSE ALL " + strconv.Itoa(len(allConnections)) + " CONNECTIONS...")
 	for _, c := range allConnections {
 		fmt.Println("  CONN NR. " + strconv.Itoa(c.number) + " ON CHAN " + c.channel)
-		c.connection.Write([]byte("\x04SERVER: Server is shutting down. Good bye :)\n"))
+		c.connection.Write([]byte("\x03Server is shutting down. Good bye :)\x04"))
+	}
+	for _, c := range allConnections {
 		c.connection.Close()
 	}
 	mutex.Unlock()
