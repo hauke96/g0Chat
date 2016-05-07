@@ -17,25 +17,28 @@ type argument struct {
 // String defines this argument as an argument that contains a string.
 // After calling 'Parse' on the parser this argument belongs to, the value will be set
 func (a *argument) String() *string {
-	v := new(string)
-	a.stringValue = v
-	return v
+	if a.stringValue == nil {
+		a.stringValue = new(string)
+	}
+	return a.stringValue
 }
 
 // String defines this argument as an argument that contains an integer.
 // After calling 'Parse' on the parser this argument belongs to, the value will be set
 func (a *argument) Int() *int {
-	v := new(int)
-	a.intValue = v
-	return v
+	if a.intValue == nil {
+		a.intValue = new(int)
+	}
+	return a.intValue
 }
 
 // String defines this argument as an argument that contains a boolen.
 // After calling 'Parse' on the parser this argument belongs to, the value will be set
 func (a *argument) Bool() *bool {
-	v := new(bool)
-	a.boolValue = v
-	return v
+	if a.boolValue == nil {
+		a.boolValue = new(bool)
+	}
+	return a.boolValue
 }
 
 // Help sets/redefines the help-message.
@@ -56,6 +59,10 @@ func (a *argument) Default(value string) *argument {
 	return a
 }
 
+// set sets all fitting fields (the one for int, bool and string) to the given value.
+// If it's a string, the string field is set and if the string contains a number only, the int field is also set
+// If it's a bool, only the bool field is set
+// If it's an int, the int and string field is set.
 func (a *argument) set(value string) {
 	intValue, err := strconv.Atoi(value)
 	if err == nil {

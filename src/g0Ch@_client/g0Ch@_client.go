@@ -91,7 +91,13 @@ func waiter(connection net.Conn) {
 		message, err = bufio.NewReader(connection).ReadString('\n')
 	}
 
-	fmt.Println("ERROR:", err)
+	fmt.Print("\n\n")
+	if err.Error() == "EOF" {
+		fmt.Println("ERROR: Connection to server lost.")
+	} else {
+		fmt.Println(err.Error())
+	}
+	cleanup()
 }
 
 // chat waits for user input and sends the given string to the server.

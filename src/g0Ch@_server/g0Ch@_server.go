@@ -54,7 +54,7 @@ func main() {
 	go func() {
 		for {
 			conn := <-ch
-			fmt.Println("[ ", conn.number, " ] CLOSING CONNECTION", conn.number, "ON PORT", conn.listener.Addr().String()[5:])
+			fmt.Print("[ ", conn.number, " ] CLOSING CONNECTION ", conn.number, " ON PORT ", conn.listener.Addr().String()[5:], "\n")
 		}
 	}()
 
@@ -90,7 +90,7 @@ func main() {
 		channel, err := bufio.NewReader(connection).ReadString('\n')
 		if err == nil {
 
-			fmt.Print("[ ", count, " ] CHANNEL:", channel)
+			fmt.Print("[ ", count, " ] CHANNEL: ", channel)
 
 			conn := Connection{
 				listener:   listener,
@@ -105,7 +105,7 @@ func main() {
 			openConn++
 			count++
 		} else {
-			fmt.Println("[ ", count, " ] ERROR WHILE ACCEPTING THE CONNECTION:", err)
+			fmt.Print("[ ", count, " ] ERROR WHILE ACCEPTING THE CONNECTION: ", err, "\n")
 		}
 
 		fmt.Println()
@@ -118,11 +118,15 @@ func chatter(connection Connection, ch chan Connection) {
 	message, err := bufio.NewReader(connection.connection).ReadString('\n')
 
 	for err == nil {
-		fmt.Print("[ ", connection.number, " ] INCOMING:   ", message)
+		fmt.Print("[ ", connection.number, " ] INCOMING:  ", message)
 		splittedMessage := strings.Split(message, "\x02")
-		fmt.Print("[ ", connection.number, " ] MESSAGE:    ", splittedMessage[1])
-		fmt.Println("[", connection.number, "] ON CHANNEL ", splittedMessage[0])
-		notifyAll(splittedMessage[1], splittedMessage[0])
+		if len(splittedMessage) == 2 {
+			fmt.Print("[ ", connection.number, " ] MESSAGE:   ", splittedMessage[1])
+			fmt.Print("[ ", connection.number, " ] ON CHANNEL ", splittedMessage[0], "\n")
+			notifyAll(splittedMessage[1], splittedMessage[0])
+		} else {
+			fmt.Print("[ ", connection.number, " ] ERROR: Splitting the message failed.")
+		}
 
 		fmt.Println()
 
