@@ -4,10 +4,20 @@ g0Ch@: A simple terminal based chat written in go (unfortunately github does not
 The chat is a linux only application, it'll propably *not* run on Windows and *maybe* on Mac. Same for the server which might also run on Windows and Mac, but there's no guarantee.
 
 ## How to build
+### Normally
 Just execute the build script via `sh compile.sh`. Windows and Mac user may do this manually.
 
+### With docker
+In [852a8d8](https://github.com/hauke96/g0Chat/commit/852a8d85355ad2d0927bdaac6be465f5860c73d1) I added a `Dockerfile` and a build script to create a docker image so that you can run the server inside a docker container.
+
 ## How to start the server
+### Normally
 Simply execute the `g0Ch@_server` file and the server will start on port 10000 by default (for parameters s. "Server Parameter" below). When it doesn't, check the output of it (so better run the server in a terminal ;) ).
+
+### With docker
+Just `cd` into the g0Ch@ directory and execute `sh dockerize.sh` to create the image. After that use `docker run --name g0chat-server g0chat_server` to start the server and `docker kill g0chat-server` to kill it (need to be run in separate terminal).
+
+Add a `&` after the run-command to run the server in background, no separate terminal will be needed to kill the server with this method.
 
 ## How to start the client
 Simply execute the `g0Ch@_client` file, choose on username and enter the server data (IP, port).
@@ -34,6 +44,24 @@ Seriously?^^ Get a live lol
 
 ### How to leave the chat
 Simply enter `exit` as message and everything will be fine. Cancelling the chat with `Ctrl+C` may have unwanted effects on your terminal (nothing to worry about, so just try it out to see what happens --> s. below).
+
+## Protocol
+### Client -> Server
+The client send very simple packaged of data to the server. The package as the following structure:
+```
+<channel><STX><username>: <message><LF>
+```
+When a user exits the chat, a good-bye-message is send:
+```
+<channel><STX>(<username> says bye)<LF>
+```
+The `<STX>` char is `\x02` on Golang or `0x02` in hexadecima notatio. The newline notation `<LF>` is `\n` in Golang and that means it's a `U+000A` Unicode char (so `LF` and not any of the `CRLF` shit or something).
+
+### Server -> Client
+The server receives a message and sends it back to all users in the given channel except the sender of the message. Therefore the message is split by the `STX` char. The channel is the first part and the message the second one. After that the server sends only the pure message to all clients:
+```
+<message><LF>
+```
 
 ## Problems
 ### Terminal hacking
