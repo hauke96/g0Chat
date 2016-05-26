@@ -10,7 +10,7 @@ import (
 func parseConsoleArgs() *Settings {
 	p := GeneralParser.NewParser()
 
-	port := p.RegisterArgument("port", "p", "The port of the g0Ch@ server (usually 10000)").Default("10000").String()
+	port := p.RegisterArgument("port", "p", "The port of the g0Ch@ server (usually 44494)").Default("44494").String()
 
 	p.Parse()
 

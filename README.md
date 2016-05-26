@@ -16,7 +16,7 @@ In [852a8d8](https://github.com/hauke96/g0Chat/commit/852a8d85355ad2d0927bdaac6b
 
 ## How to start the server
 ### Normally
-Simply execute the `g0Ch@_server` file and the server will start on port 10000 by default (for parameters s. "Server Parameter" below). When it doesn't, check the output of it (so better run the server in a terminal ;) ).
+Simply execute the `g0Ch@_server` file and the server will start on port 44494 by default (for parameters s. "Server Parameter" below). When it doesn't, check the output of it (so better run the server in a terminal ;) ).
 
 ### With docker
 Just `cd` into the g0Ch@ directory and execute `sh dockerize.sh` to create the image. After that use `docker run -p 44494:44494 --name g0chat-server g0chat_server` to start the server and `docker kill g0chat-server` to kill it (need to be run in separate terminal).
@@ -35,7 +35,7 @@ All parameters can be used with the syntax [parameter]=[value], e.g. `--username
 ### Client Parameter
 * `-u, --username : `The username/nickname.
 * `-i, --ip       : `The IP of the g0Ch@ server.
-* `-p, --port     : `The port of the g0Ch@ server (usually 10000).
+* `-p, --port     : `The port of the g0Ch@ server (usually 44494).
 * `-l, --limit    : `Value for the size of the message buffer (how many messages are stored). The default is 50.
 * `-c, --channel  : `The channel you want to talk in.
 * `-h, --help     : `Shows this kind of list.
