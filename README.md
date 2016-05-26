@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/hauke96/g0Chat.svg?branch=master)](https://travis-ci.org/hauke96/g0Chat)
 # g0Ch@
 g0Ch@ (spoken "go chat") is a simple chat server written in go (unfortunately github does not allow @ in the repo name thats why the repo is called `g0Chat` and not `g0Ch@` :/). This repo also contains a terminal client which does only work in linux.
 
