@@ -11,7 +11,7 @@ ADD . /
 RUN go build -o g0chat_server /src/g0Ch@_server/*.go
 
 # Run the server command by default when the container starts.
-ENTRYPOINT ./g0chat_server -p=10000
+ENTRYPOINT ./g0chat_server -p=44494
 
-# Document that the service listens on port 10000.
-EXPOSE 10000
+# Document that the service listens on port 44494.
+EXPOSE 44494

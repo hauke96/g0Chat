@@ -1,7 +1,10 @@
 # g0Ch@
-g0Ch@: A simple terminal based chat written in go (unfortunately github does not allow @ in the repo name thats why the repo is called `g0Chat` and not `g0Ch@` :/)
+g0Ch@ (spoken "go chat") is a simple chat server written in go (unfortunately github does not allow @ in the repo name thats why the repo is called `g0Chat` and not `g0Ch@` :/). This repo also contains a terminal client which does only work in linux.
 
-The chat is a linux only application, it'll propably *not* run on Windows and *maybe* on Mac. Same for the server which might also run on Windows and Mac, but there's no guarantee.
+The chat is a **linux only** application, it'll probably *not* run on Windows and *maybe* on Mac. Same for the server which *might* also run on Windows and Mac, but there's **no guarantee**.
+
+## Public server
+There's a public server available with the IP `188.68.53.201`. If you're lucky, you'll find me in the channel `dev`.
 
 ## How to build
 ### Normally
@@ -15,7 +18,9 @@ In [852a8d8](https://github.com/hauke96/g0Chat/commit/852a8d85355ad2d0927bdaac6b
 Simply execute the `g0Ch@_server` file and the server will start on port 10000 by default (for parameters s. "Server Parameter" below). When it doesn't, check the output of it (so better run the server in a terminal ;) ).
 
 ### With docker
-Just `cd` into the g0Ch@ directory and execute `sh dockerize.sh` to create the image. After that use `docker run --name g0chat-server g0chat_server` to start the server and `docker kill g0chat-server` to kill it (need to be run in separate terminal).
+Just `cd` into the g0Ch@ directory and execute `sh dockerize.sh` to create the image. After that use `docker run -p 44494:44494 --name g0chat-server g0chat_server` to start the server and `docker kill g0chat-server` to kill it (need to be run in separate terminal).
+
+The `-p` parameter specifies the mapping of container- and host-port. You can write `<hostPort>:<containerPort>` with e.g. `123:44494` then the g0Ch@ server is available over the port `123` via the host server.
 
 Add a `&` after the run-command to run the server in background, no separate terminal will be needed to kill the server with this method.
 
