@@ -17,7 +17,7 @@ func parseConsoleArgs() *Settings {
 
 	username := p.RegisterArgument("username", "u", "The username/nickname").String()
 	limit := p.RegisterArgument("limit", "l", "Value for the size of the message buffer (how many messages are stored)").Default("50").Int()
-	port := p.RegisterArgument("port", "p", "The port of the g0Ch@ server (usually 10000)").Default("10000").String()
+	port := p.RegisterArgument("port", "p", "The port of the g0Ch@ server (usually 44494)").Default("44494").String()
 	ip := p.RegisterArgument("ip", "i", "The IP of the g0Ch@ server").String()
 	channel := p.RegisterArgument("channel", "c", "The channel you want to talk in").String()
 

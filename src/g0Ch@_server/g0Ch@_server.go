@@ -30,7 +30,7 @@ type Connection struct {
 
 var allConnections = make([]Connection, 0)
 var mutex = &sync.Mutex{}
-var settings = &Settings{port: "10000"}
+var settings = &Settings{port: "44494"}
 
 func main() {
 	// ------------------------------
